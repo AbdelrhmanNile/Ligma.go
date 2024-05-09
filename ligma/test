@@ -1,0 +1,22 @@
+class Test {
+    def init = func(x, y, z){
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+
+    def __get__ = func(i){
+        if (i == 1) {
+            return self.x;
+        } else {
+            if (i == 2) {
+                return self.y;
+            } else {
+                return self.z;
+            }
+        }
+    }
+}
+
+def t = Test(1, 2, 3)
+print(t[1])
