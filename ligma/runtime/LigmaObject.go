@@ -16,6 +16,7 @@ const (
 	LIST_OBJ = "LIST"
 	CLASS_OBJ = "CLASS"
 	INSTANCE_OBJ = "INSTANCE"
+	MAP_OBJ = "MAP"
 )
 
 type LigmaObject interface {
@@ -27,6 +28,11 @@ type LigmaCallable interface {
 	LigmaObject
 	Call(interpreter *Interpreter, args ...LigmaObject) LigmaObject
 	Arity() int
+}
+
+type LigmaHashable interface {
+	LigmaObject
+	MapKey() MapKey
 }
 
 

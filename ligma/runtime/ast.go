@@ -28,6 +28,7 @@ type ExpressionVisitor interface {
 	VisitListLiteral(*ListLiteral) LigmaObject
 	VisitStringLiteral(*StringLiteral) LigmaObject
 	VisitFunctionLiteral(*FunctionLiteral) LigmaObject
+	VisitMapLiteral(*MapLiteral) LigmaObject
 	VisitGetExpression(*GetExpression) LigmaObject
 	VisitSetExpression(*SetExpression) LigmaObject
 	VisitSelfExpression(*Self) LigmaObject

@@ -370,3 +370,11 @@ func (r *Resolver) VisitSuper(se *Super) LigmaObject {
 	r.resolveLocal(se, se.Token.Literal)
 	return nil
 }
+
+func (r *Resolver) VisitMapLiteral(ml *MapLiteral) LigmaObject {
+	for key, value := range ml.Pairs {
+		r.resolveExpression(key)
+		r.resolveExpression(value)
+	}
+	return nil
+}

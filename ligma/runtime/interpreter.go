@@ -307,6 +307,35 @@ func (i *Interpreter) VisitListLiteral(ll *ListLiteral) LigmaObject {
 	return ApplyFunction(i, list_class.(*LigmaClass), []LigmaObject{&elements})
 }
 
+func (i *Interpreter) VisitMapLiteral(ml *MapLiteral) LigmaObject {
+	pairs := make(map[MapKey]MapPair)
+
+	for key, value := range ml.Pairs {
+		key := key.Accept(i)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(LigmaHashable)
+		if !ok {
+			return NewError("unusable as map key: %s", key.Type())
+		}
+
+		value := value.Accept(i)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.MapKey()
+
+		pairs[hashed] = MapPair{Key: key, Value: value}
+
+	}
+
+	map_class, _ := i.Env.Get("map")
+	return ApplyFunction(i, map_class.(*LigmaClass), []LigmaObject{&LigmaMap{Pairs: pairs}})
+}
+
 func (i *Interpreter) VisitStringLiteral(sl *StringLiteral) LigmaObject {
 	//return &LigmaString{Value: sl.Value}
 	string_class, _ := i.Env.Get("str")

@@ -42,12 +42,18 @@ func Start(in io.Reader, out io.Writer) {
 		evaluated := i.Interpret(program)
 
 		if evaluated != nil {
-			instance := evaluated.(*runtime.LigmaInstance)
-			repr_func, _ :=instance.Get("__repr__")
-			repr_fun := repr_func.(runtime.LigmaCallable)
-			io.WriteString(out, repr_fun.Call(nil, nil).Inspect())
-			//io.WriteString(out, evaluated.Inspect())
-			io.WriteString(out, "\n")
+			switch evaluated.(type) {
+			case *runtime.LigmaInstance:
+				instance := evaluated.(*runtime.LigmaInstance)
+				repr_func, _ :=instance.Get("__repr__")
+				repr_fun := repr_func.(runtime.LigmaCallable)
+				io.WriteString(out, repr_fun.Call(nil, nil).Inspect())
+				io.WriteString(out, "\n")
+			
+			default:
+				io.WriteString(out, evaluated.Inspect())
+				io.WriteString(out, "\n")
+			}
 		}
 	}
 }

@@ -139,6 +139,26 @@ func (i *LigmaInstance) Set(name string, val LigmaObject) LigmaObject {
 	return val
 }
 
+func (i *LigmaInstance) MapKey() MapKey {
+	var key MapKey
+
+	instanceValue := i.Fields["value"]
+
+	switch instanceValue.(type) {
+
+	case *LigmaInteger:
+		key = instanceValue.(*LigmaInteger).MapKey()
+	case *LigmaString:
+		key = instanceValue.(*LigmaString).MapKey()
+	case *LigmaBoolean:
+		key = instanceValue.(*LigmaBoolean).MapKey()
+	
+	}
+
+	return key
+	
+}
+
 func (i *LigmaInstance) Add (other LigmaObject) LigmaObject {
 	add_func, _ := i.Get("__add__")
 	switch add_func.(type) {

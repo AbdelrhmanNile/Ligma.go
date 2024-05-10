@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -54,66 +55,24 @@ var builtins = map[string]*Builtin{
 		},
 	},
 
-	"range": {
-		Literal: "range",
+	"input": {
+		Literal: "input",
 		Fn: func(args ...LigmaObject) LigmaObject {
-			var start, end, step int64
-			switch len(args) {
-			case 1:
-				start = 0
-				end = args[0].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-				step = 1
-			case 2:
-				start = args[0].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-				end = args[1].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-				step = 1
-			case 3:
-				start = args[0].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-				end = args[1].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-				step = args[2].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
+			print(args[0].(*LigmaInstance).Fields["value"].(*LigmaString).Value	)
+			var input string
+			_, err := fmt.Scanln(&input)
+			if err != nil {
+				return NewError(err.Error())
 			}
-
-			var elements []LigmaObject
-			for i := start; i < end; i += step {
-				elements = append(elements, builtinsClasses["int"].Call(nil, &LigmaInteger{Value: i}))
-			}
-			return builtinsClasses["list"].Call(nil, elements...)
+			return builtinsClasses["str"].Call(nil, &LigmaString{Value: input})
 		},
-		NumArgs: -1,
+		NumArgs: 1,
 	},
 
 
 }
 
 
-/* var builtinsClasses = map[string]*LigmaClass{
-	"BaseObject": {
-		Name: "BaseObject",
-		Methods: map[string]*BuiltinClassMethod{
-			"init": {
-				Literal: "init",
-				Fn: func(args ...LigmaObject) LigmaObject {
-					self := args[len(args)-1].(*LigmaInstance)
-					args = args[:len(args)-1]
-					self.Fields["name"] = &LigmaString{Value: "A7a"}
-					return  nil
-				},
-			},
-
-			"print": {
-				Literal: "print",
-				Fn: func(args ...LigmaObject) LigmaObject {
-					self := args[len(args)-1].(*LigmaInstance)
-					args = args[:len(args)-1] 
-					println(self.Fields["name"].Inspect())
-					return  nil
-				},
-				NumArgs: -1,
-			},
-		},
-	},
-}
- */
 
  var builtinsClasses = map[string]*LigmaClass{
 	"object": {
@@ -736,6 +695,64 @@ func DefineBuiltinTypes() {
 		Superclasses: []*LigmaClass{builtinsClasses["container"]},
 	}
 
+	builtinsClasses["map"] = &LigmaClass{
+		Name: "map",
+		Methods: ClassMethods{
+			BuiltinMethods: map[string]*BuiltinClassMethod{
+				"init":{
+					Literal: "init",
+					Fn: func(args ...LigmaObject) LigmaObject {
+						self := args[len(args)-1].(*LigmaInstance)
+						args = args[:len(args)-1]
+
+						if len(args) == 0 {
+							self.Fields["value"] = &LigmaMap{Pairs: map[MapKey]MapPair{}}
+						} else {
+							switch arg := args[0].(type) {
+							case *LigmaMap:
+								self.Fields["value"] = &LigmaMap{Pairs: arg.Pairs}
+							}
+						}
+						return nil
+					},
+					NumArgs: 1,
+				},
+
+				"__repr__": {
+					Literal: "__repr__",
+					Fn: func(args ...LigmaObject) LigmaObject {
+						return NewError("Not implemented")
+					},
+				},
+
+				"__get__": {
+					Literal: "__get__",
+					Fn: func(args ...LigmaObject) LigmaObject {
+						self := args[len(args)-1].(*LigmaInstance)
+						args = args[:len(args)-1]
+
+						mapObj := self.Fields["value"].(*LigmaMap)
+
+						index := args[0]
+						key := index.(*LigmaInstance).Fields["value"].(LigmaHashable)
+
+						pair, ok := mapObj.Pairs[key.MapKey()]
+						if !ok {
+							return NewError("key not found")
+						}
+
+						return pair.Value
+
+					},
+					NumArgs: 1,
+				},
+			},
+		},
+		Superclasses: []*LigmaClass{builtinsClasses["container"]},
+	}
+
+
+
 
 
 
@@ -749,17 +766,12 @@ func DefineBuiltinTypes() {
 						self := args[len(args)-1].(*LigmaInstance)
 						args = args[:len(args)-1]
 
-						// strings are LigmaList of characters
 						if len(args) == 0 {
 							self.Fields["value"] = &LigmaString{Value: ""}
 						} else {
 							switch arg := args[0].(type) {
 							case *LigmaString:
-								vals := &LigmaList{Elements: []LigmaObject{}}
-								for _, char := range arg.Value {
-									vals.Elements = append(vals.Elements, &LigmaString{Value: string(char)})
-								}
-								self.Fields["value"] = vals
+								self.Fields["value"] = &LigmaString{Value: arg.Value}
 							}
 						}
 						return nil
@@ -821,13 +833,13 @@ func DefineBuiltinTypes() {
 					Fn: func(args ...LigmaObject) LigmaObject {
 						self := args[len(args)-1].(*LigmaInstance)
 						index := args[0].(*LigmaInstance).Fields["value"].(*LigmaInteger).Value
-						str_list := self.Fields["value"].(*LigmaList)
+						str := self.Fields["value"].(*LigmaString).Value
 
-						if index < 0 || index >= int64(len(str_list.Elements)) {
+						if index < 0 || index >= int64(len(str)) {
 							return NewError("index out of range")
 						}
 
-						return builtinsClasses["str"].Call(nil, str_list.Elements[index])
+						return builtinsClasses["str"].Call(nil, &LigmaString{Value: string(str[index])})
 
 					},
 					NumArgs: 1,
@@ -836,12 +848,9 @@ func DefineBuiltinTypes() {
 					Literal: "__repr__",
 					Fn: func(args ...LigmaObject) LigmaObject {
 						self := args[len(args)-1].(*LigmaInstance)
-						str_list := self.Fields["value"].(*LigmaList)
-						var out []string
-						for _, elem := range str_list.Elements {
-							out = append(out, elem.(*LigmaString).Value)
-						}
-						return &LigmaString{Value: strings.Join(out, "")}
+						str := self.Fields["value"].(*LigmaString)
+
+						return str
 					},
 				},
 
@@ -849,12 +858,9 @@ func DefineBuiltinTypes() {
 					Literal: "__str__",
 					Fn: func(args ...LigmaObject) LigmaObject {
 						self := args[len(args)-1].(*LigmaInstance)
-						str_list := self.Fields["value"].(*LigmaList)
-						var out []string
-						for _, elem := range str_list.Elements {
-							out = append(out, elem.(*LigmaString).Value)
-						}
-						return &LigmaString{Value: strings.Join(out, "")}
+						str := self.Fields["value"].(*LigmaString)
+
+						return str
 					},
 				},
 				"__len__": {

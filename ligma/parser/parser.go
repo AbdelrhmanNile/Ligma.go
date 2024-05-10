@@ -83,6 +83,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LBRACKET, p.parseListLiteral)
 	p.registerPrefix(token.SELF, p.parseSelf)
 	p.registerPrefix(token.SUPER, p.parseSuper)
+	p.registerPrefix(token.LBRACE, p.parseMapLiteral)
 	
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -588,6 +589,37 @@ func (p *Parser) parseListLiteral() runtime.Expression {
 	list := &runtime.ListLiteral{Token: p.curToken}
 	list.Elements = p.parseExpressionList(token.RBRACKET)
 	return list
+}
+
+func (p *Parser) parseMapLiteral() runtime.Expression {
+	map_ := &runtime.MapLiteral{Token: p.curToken}
+
+	map_.Pairs = make(map[runtime.Expression]runtime.Expression)
+
+	for !p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
+		key := p.parseExpression(LOWEST)
+
+		if (!p.expectPeek(token.COLON)){
+			return nil
+		}
+
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+
+		map_.Pairs[key] = value
+
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+
+	}
+
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+
+	return map_
 }
 
 func (p *Parser) parseBoolean() runtime.Expression {
