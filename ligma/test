@@ -1,0 +1,12 @@
+class MyClass {
+    def init = func(x) {
+        self.x = x;
+    }
+
+    def __str__ = func() {
+        return "MyClass instance with x = " + self.x;
+    }
+}
+
+def obj = MyClass("hello");
+def i = 0; while (i < 10) { print(obj); i = i + 1; }
