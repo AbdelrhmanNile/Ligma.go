@@ -1,4 +1,0 @@
-name = input("Enter your name: \n")
-if (name == "Esmat"){
-    print(name + ", I hate to break it to you but you are Metnak")
-}
