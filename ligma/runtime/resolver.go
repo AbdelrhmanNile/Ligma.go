@@ -19,10 +19,11 @@ const (
 	cls_SUBCLASS
 )
 
-const (
+const ( // condition types
 	_ int = iota
-	loop_NONE
-	loop_WHILE
+	con_NONE
+	con_WHILE
+	con_IF
 )
 
 
@@ -33,14 +34,14 @@ type Resolver struct {
 
 	currentFunction int
 	currentClass int
-	currentLoop int
+	currentCon int
 }
 
 func NewResolver(interpreter *Interpreter) *Resolver {
 	currentFunction := ft_NONE
 	currentClass := cls_NONE
-	currentLoop := loop_NONE
-	return &Resolver{interpreter: interpreter, scopes: []map[string]bool{}, currentFunction: currentFunction, currentClass: currentClass, currentLoop: currentLoop}
+	currentCon := con_NONE
+	return &Resolver{interpreter: interpreter, scopes: []map[string]bool{}, currentFunction: currentFunction, currentClass: currentClass, currentCon: currentCon}
 }
 
 func (r *Resolver) Resolve(stmts []Statement) {
@@ -122,6 +123,7 @@ func (r *Resolver) VisitDefStatement(def *DefStatement) LigmaObject {
 	return nil
 }
 
+
 func (r *Resolver) VisitExpressionStatement(exprStmt *ExpressionStatement) LigmaObject {
 	r.resolveExpression(exprStmt.Expression)
 	return nil
@@ -174,11 +176,15 @@ func (r *Resolver) VisitIdentifier(ident *Identifier) LigmaObject {
 			return nil
 		}
 
-		if r.currentLoop == loop_WHILE {
+		if r.currentCon == con_WHILE {
 			r.resolveLocal(ident, ident.Value)
 			return nil
 		}
 
+		if r.currentCon == con_IF {
+			r.resolveLocal(ident, ident.Value)
+			return nil
+		}
 		NewError("Can't read local variable in its own initializer.")
 		println("Can't read local variable in its own initializer.")
 		println("Please come up with a better error handling mechanism.")
@@ -191,6 +197,7 @@ func (r *Resolver) VisitIdentifier(ident *Identifier) LigmaObject {
 }
 
 func (r *Resolver) VisitIfExpression(ifExpr *IfExpression) LigmaObject {
+	r.currentCon = con_IF
 	r.resolveExpression(ifExpr.Condition)
 	r.resolveStatement(ifExpr.Consequence)
 
@@ -225,7 +232,7 @@ func (r *Resolver) VisitReturnStatement(rs *ReturnStatement) LigmaObject {
 }
 
 func (r *Resolver) VisitWhileStatement(ws *WhileStatement) LigmaObject {
-	r.currentLoop = loop_WHILE
+	r.currentCon = con_WHILE
 	r.resolveExpression(ws.Condition)
 	r.resolveStatement(ws.Body)
 	return nil

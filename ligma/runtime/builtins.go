@@ -871,6 +871,34 @@ func DefineBuiltinTypes() {
 						return builtinsClasses["int"].Call(nil, &LigmaInteger{Value: int64(len(str_list.Elements))})
 					},
 				},
+
+				"__add__": {
+					Literal: "__add__",
+					Fn: func(args ...LigmaObject) LigmaObject {
+						self := args[len(args)-1].(*LigmaInstance)
+						args = args[:len(args)-1]
+
+						my_str := self.Fields["value"].(*LigmaString).Value
+						other := args[0].(*LigmaInstance)
+						other_str := other.Fields["value"].(*LigmaString).Value
+
+						return builtinsClasses["str"].Call(nil, &LigmaString{Value: my_str + other_str})
+					},
+				},
+
+				"__eq__": {
+					Literal: "__eq__",
+					Fn: func(args ...LigmaObject) LigmaObject {
+						self := args[len(args)-1].(*LigmaInstance)
+						args = args[:len(args)-1]
+
+						my_str := self.Fields["value"].(*LigmaString).Value
+						other := args[0].(*LigmaInstance)
+						other_str := other.Fields["value"].(*LigmaString).Value
+
+						return nativeBoolToBooleanObject(my_str == other_str)
+					},
+				},
 				
 			},
 		},

@@ -66,6 +66,7 @@ const (
 	CLASS = "CLASS"
 	SELF = "SELF"
 	SUPER = "SUPER"
+	IMPORT = "IMPORT"
 
 	// Control Flow
 	FOR = "FOR"
@@ -90,6 +91,7 @@ var keywords = map[string]TokenType{
 	"class": CLASS,
 	"self": SELF,
 	"super": SUPER,
+	"import": IMPORT,
 }
 
 // LookupIdent checks if a given identifier is a keyword
